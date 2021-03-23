@@ -1,0 +1,16 @@
+Package: GuidedBayesianClustering
+Title: Guided Bayesian Clustering
+Version: 1.0.0
+Authors@R: 
+    person(given = "Lingsong",
+           family = "Meng",
+           role = c("aut", "cre"),
+           email = "lingsongmeng@ufl.edu")
+Description: Outcome-guided Bayesian Clustering for Disease Subtype Discovery.
+Depends: R(>= 3.5.0)
+Imports: DescTools, survival
+License: GPL-2
+NeedsCompilation: no
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.0
