@@ -7,8 +7,7 @@ Authors@R:
            role = c("aut", "cre"),
            email = "lingsongmeng@ufl.edu")
 Description: Outcome-guided Bayesian Clustering for Disease Subtype Discovery.
-Depends: R(>= 3.5.0)
-Imports: DescTools, survival
+Depends: DescTools, survival, R(>= 3.5.0)
 License: GPL-2
 NeedsCompilation: no
 Encoding: UTF-8
