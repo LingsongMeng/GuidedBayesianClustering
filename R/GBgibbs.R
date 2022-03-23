@@ -1,7 +1,7 @@
 ##' Guided Bayesian Clustering
 ##'
 ##' Guided Bayesian clustering integrating clinical dataset with gene expression dataset.
-##' @title GBclustering
+##' @title GBgibbs
 ##' @param Y Gene expression matrix, n*p (rows for subjects and columns for genes).
 ##' @param U Adjusted R-squared or adjusted pseudo R-squared between phenotypic variable and expression value of each gene, a vector.
 ##' @param K Number of clusters.
@@ -30,9 +30,10 @@
 ##' @author Lingsong Meng
 
 
-GBclustering <- function(Y, U, K, n.iter = 500, hyperparameters = c(1, 1, 1, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 2, 0.005, 4, 450), showIteration = T) {
+GBgibbs <- function(Y, U, K, n.iter = 3000, hyperparameters = c(1, 1, 1, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 2, 0.005, 
+    4, 450), showIteration = T) {
     
-    n.record <- floor(n.iter/2)
+    n.record <- n.iter - 1500
     n <- nrow(Y)
     G <- ncol(Y)
     
@@ -95,6 +96,7 @@ GBclustering <- function(Y, U, K, n.iter = 500, hyperparameters = c(1, 1, 1, 0.0
     L_t_record <- array(NA, dim = c(G, n.record))
     pi_t_record <- array(NA, dim = c(K, n.record))
     Z_t_record <- array(NA, dim = c(n, n.record))
+    Z_t_noLS_record <- array(NA, dim = c(n, n.record))
     mu_t_record <- array(NA, dim = c(G, K, n.record))
     sigma_sq_t_record <- array(NA, dim = c(G, n.record))
     
@@ -113,7 +115,11 @@ GBclustering <- function(Y, U, K, n.iter = 500, hyperparameters = c(1, 1, 1, 0.0
         tau_U1_t <- Guidance_t[2]
         L_t <- update_L(mu_t, U, DE_prop_t, tau_mu0_t, tau_mu1_t, tau_U0_t, tau_U1_t)
         pi_t <- update_pi(Z_t, c, K)
-        Z_t <- update_Z_v2(Z_t, mu_t, sigma_sq_t, pi_t, Y)
+        Z_prev <- Z_t
+        Z_t_noLS <- update_Z_v2(Z_t, mu_t, sigma_sq_t, pi_t, Y)
+        if (t > 1) {
+            Z_t <- LabelSwitch(Z_prev, Z_t_noLS)  # Deal with label switch in Z_t
+        }
         mu_t <- update_mu(K, L_t, Z_t, sigma_sq_t, tau_mu0_t, tau_mu1_t, Y)
         sigma_sq_t <- update_sigma_sq(mu_t, Z_t, a_sigma, b_sigma, Y)
         
@@ -131,6 +137,7 @@ GBclustering <- function(Y, U, K, n.iter = 500, hyperparameters = c(1, 1, 1, 0.0
             L_t_record[, t - (n.iter - n.record)] <- L_t
             pi_t_record[, t - (n.iter - n.record)] <- pi_t
             Z_t_record[, t - (n.iter - n.record)] <- Z_t
+            Z_t_noLS_record[, t - (n.iter - n.record)] <- Z_t_noLS
             mu_t_record[, , t - (n.iter - n.record)] <- mu_t
             sigma_sq_t_record[, t - (n.iter - n.record)] <- sigma_sq_t
         }
@@ -182,12 +189,11 @@ GBclustering <- function(Y, U, K, n.iter = 500, hyperparameters = c(1, 1, 1, 0.0
     output[[16]] <- sigma_sq_t_record
     
     logL <- sum(log(pi_t_post[Z_t_post])) + sum(log(dnorm(t(Y), mu_t_post[, Z_t_post], sqrt(sigma_sq_t_post))))
-    BIC <- (-2) * logL + K * G * log(n * G)
+    BIC <- (-2) * logL + K * G * log(G)
     output[[17]] <- BIC
     
-    
-    names(output) <- c("L_PosterSamp", "Subtypes", "p", "tau_mu0", "tau_mu1", "tau_U0", "tau_U1", "pi", "mu", "sigma_sq", "tau_mu0_record", "tau_mu1_record", 
-        "tau_U0_record", "tau_U1_record", "mu_record", "sigma_sq_record", "BIC")
+    names(output) <- c("L_PosterSamp", "Subtypes", "p", "tau_mu0", "tau_mu1", "tau_U0", "tau_U1", "pi", "mu", "sigma_sq", "tau_mu0_record", 
+        "tau_mu1_record", "tau_U0_record", "tau_U1_record", "mu_record", "sigma_sq_record", "BIC")
     
     return(output)
 }

@@ -73,8 +73,8 @@ update_L <- function(mu_t, U, DE_prop_t, tau_mu0_t, tau_mu1_t, tau_U0_t, tau_U1_
 
 # 5. Update the subtype proportions
 update_pi <- function(Z_t, c, K) {
-    # update the subtype proportion Z_t is a vector containing n-component where the entry Z_t[j] stands for the subtype indicator of jth subject c is the
-    # hyperparameter vector in the Dirichlet prior output is a vector with K components
+    # update the subtype proportion Z_t is a vector containing n-component where the entry Z_t[j] stands for the subtype
+    # indicator of jth subject c is the hyperparameter vector in the Dirichlet prior output is a vector with K components
     prob <- vapply(seq_len(K), function(k) sum(Z_t == k), FUN.VALUE = 1)
     tmp <- Dirichlet(prob + c)
     return(tmp)
@@ -84,9 +84,9 @@ update_pi <- function(Z_t, c, K) {
 
 # 6. (fast) Update the subtype indicator for samples
 update_Z_v2 <- function(Z_t, mu_t, sigma_sq_t, pi_t, Y) {
-    # update Z by Metropolis-Hasting step Z_t is a n-component vector where the entry Z_t[j] stands for the subtype indicator of jth subject mu_t is the G
-    # by K subtype effect matrix sigma_sq_t is the variance vector with G components pi_t is a vector with K components Y is the gene expression data
-    # matrix output is a vector containing n-component
+    # update Z by Metropolis-Hasting step Z_t is a n-component vector where the entry Z_t[j] stands for the subtype indicator
+    # of jth subject mu_t is the G by K subtype effect matrix sigma_sq_t is the variance vector with G components pi_t is a
+    # vector with K components Y is the gene expression data matrix output is a vector containing n-component
     K <- ncol(mu_t)
     n <- nrow(Y)
     Z_tmp <- Z_t
@@ -108,8 +108,8 @@ update_Z_v2 <- function(Z_t, mu_t, sigma_sq_t, pi_t, Y) {
 
 # 7. (fast) Update the subtype effects
 update_mu <- function(K, L_t, Z_t, sigma_sq_t, tau_mu0_t, tau_mu1_t, Y) {
-    # update subtype effect L_t is a vector with G components Z_t is a vector containing n components Z_t[j] stands for the subtype indicator of jth
-    # subject sigma_sq_t is the variance vector with G components output is a G by K matrix
+    # update subtype effect L_t is a vector with G components Z_t is a vector containing n components Z_t[j] stands for the
+    # subtype indicator of jth subject sigma_sq_t is the variance vector with G components output is a G by K matrix
     n <- nrow(Y)
     G <- ncol(Y)
     g0 <- which(L_t == 0)
@@ -137,12 +137,22 @@ update_mu <- function(K, L_t, Z_t, sigma_sq_t, tau_mu0_t, tau_mu1_t, Y) {
 
 # 8. (fast) Update the variances
 update_sigma_sq <- function(mu_t, Z_t, a_sigma, b_sigma, Y) {
-    # update variance mu_t is the G by K subtype effect matrix Z_t is a vector containing n-component where Z_t[j] stands for the subtype indicator of jth
-    # subject output is a vector with G components
+    # update variance mu_t is the G by K subtype effect matrix Z_t is a vector containing n-component where Z_t[j] stands for
+    # the subtype indicator of jth subject output is a vector with G components
     n <- nrow(Y)
     shape <- a_sigma + n/2
     rate <- b_sigma + rowSums((t(Y) - mu_t[, Z_t])^2)/2
     sigma_sq <- vapply(rate, function(x) Inv_Gamma(shape, x), FUN.VALUE = 1)
     return(sigma_sq)
+}
+
+
+# Label Switch
+LabelSwitch <- function(reference, label) {
+    a <- do.call(cbind, permn(unique(label)))
+    all <- apply(a, 2, function(x) x[label])
+    ind <- which.max(apply(all == reference, 2, sum))
+    label_adj <- all[, ind]
+    return(label_adj)
 }
 
